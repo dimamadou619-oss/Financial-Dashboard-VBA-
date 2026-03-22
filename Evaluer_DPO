@@ -1,0 +1,35 @@
+Sub EvaluerDPO()
+    On Error Resume Next
+
+    Dim wsKPI As Worksheet, wsData As Worksheet
+    Dim valF5 As Variant, valF6 As Variant
+    Dim resultat As String
+
+    Set wsKPI = ThisWorkbook.Sheets("KPI")
+    Set wsData = ThisWorkbook.Sheets("DONNEES")
+
+    valF5 = wsKPI.Range("F5").Value
+    valF6 = wsData.Range("F6").Value
+
+    If IsNumeric(valF5) And IsNumeric(valF6) Then
+        If valF5 >= valF6 And valF5 <= valF6 + 3 Then
+            resultat = "DPO NORMAL"
+        ElseIf valF5 >= valF6 + 4 And valF5 <= valF6 + 10 Then
+            resultat = "DPO LONG"
+        ElseIf valF5 > valF6 + 10 Then
+            resultat = "DPO TROP LONG"
+        ElseIf valF5 <= valF6 And valF5 >= valF6 - 3 Then
+            resultat = "DPO NORMAL"
+        ElseIf valF5 <= valF6 - 4 And valF5 >= valF6 - 10 Then
+            resultat = "DPO COURT"
+        ElseIf valF5 < valF6 - 10 Then
+            resultat = "DPO TROP COURT"
+        Else
+            resultat = ""
+        End If
+
+        wsKPI.Range("G5").Value = resultat
+    Else
+        wsKPI.Range("G5").Value = "Valeurs invalides"
+    End If
+End Sub
