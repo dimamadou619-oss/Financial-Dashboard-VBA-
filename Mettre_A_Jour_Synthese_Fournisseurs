@@ -1,0 +1,48 @@
+Sub MettreAJourSyntheseFournisseurs()
+    Dim wsData As Worksheet, wsKPI As Worksheet
+    Dim tbl As ListObject
+    Dim fournisseur As String
+    Dim montant As Double
+    Dim dict As Object
+    Dim i As Long, ligneKPI As Long
+    Dim totalEncours As Double
+    Dim nomFournisseur As Variant
+
+    Set wsData = ThisWorkbook.Sheets("DONNEES")
+    Set wsKPI = ThisWorkbook.Sheets("KPI")
+    Set tbl = wsData.ListObjects("ACHATS_ET_DETTES_FOURNISSEURS")
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    ' Vider les anciennes données dans KPI
+    wsKPI.Range("E9:G1000").ClearContents
+    totalEncours = 0
+
+    ' Boucle sur les lignes du tableau
+    For i = 1 To tbl.ListRows.Count
+        If UCase(Trim(tbl.DataBodyRange(i, tbl.ListColumns("STATUT").Index).Value)) = "EN COURS" Then
+            fournisseur = Trim(tbl.DataBodyRange(i, tbl.ListColumns("FOURNISSEUR").Index).Value)
+            montant = Val(tbl.DataBodyRange(i, tbl.ListColumns("MONTANT").Index).Value)
+            
+            If fournisseur <> "" Then
+                If dict.exists(fournisseur) Then
+                    dict(fournisseur) = dict(fournisseur) + montant
+                Else
+                    dict.Add fournisseur, montant
+                End If
+                totalEncours = totalEncours + montant
+            End If
+        End If
+    Next i
+
+    ' Affichage dans KPI à partir de E9
+    ligneKPI = 9
+    For Each nomFournisseur In dict.Keys
+        wsKPI.Cells(ligneKPI, 5).Value = nomFournisseur                     ' E : Fournisseur
+        wsKPI.Cells(ligneKPI, 6).Value = dict(nomFournisseur)              ' F : Montant
+        If totalEncours > 0 Then
+            wsKPI.Cells(ligneKPI, 7).Value = dict(nomFournisseur) / totalEncours  ' G : Taux
+            wsKPI.Cells(ligneKPI, 7).NumberFormat = "0.00%"
+        End If
+        ligneKPI = ligneKPI + 1
+    Next nomFournisseur
+End Sub
