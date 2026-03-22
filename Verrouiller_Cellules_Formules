@@ -1,0 +1,42 @@
+Sub VerrouillerCellulesAvecFormules()
+    Dim ws As Worksheet
+    Dim cell As Range
+    Dim plageFormules As Range
+    Dim mdp As String: mdp = "2005"
+
+    Set ws = ThisWorkbook.Sheets("DONNEES")
+
+    ' Déprotéger la feuille au cas où elle est déjà protégée
+    On Error Resume Next
+    ws.Unprotect Password:=mdp
+    On Error GoTo 0
+
+    ' Déverrouiller toutes les cellules
+    ws.Cells.Locked = False
+
+    ' Identifier et verrouiller uniquement les cellules contenant une formule
+    For Each cell In ws.UsedRange
+        If cell.HasFormula Then
+            If plageFormules Is Nothing Then
+                Set plageFormules = cell
+            Else
+                Set plageFormules = Union(plageFormules, cell)
+            End If
+        End If
+    Next cell
+
+    If Not plageFormules Is Nothing Then
+        plageFormules.Locked = True
+    End If
+
+    ' Reprotéger la feuille sans gêner les macros ni les tableaux
+    ws.Protect Password:=mdp, _
+        UserInterfaceOnly:=True, _
+        AllowFiltering:=True, _
+        AllowSorting:=True, _
+        AllowUsingPivotTables:=True, _
+        AllowFormattingCells:=True
+
+    MsgBox "Seules les cellules contenant des formules ont été verrouillées avec succès.", vbInformation
+End Sub
+
