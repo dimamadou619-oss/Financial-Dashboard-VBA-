@@ -1,0 +1,3 @@
+Sub OuvrirFormulaire()
+    frmGestionLignes.Show
+End Sub
