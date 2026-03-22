@@ -1,0 +1,132 @@
+Option Explicit
+
+Private lastF5Value As Variant
+
+Private Sub Workbook_Open()
+  ' Verrouille la feuille GUIDE D'UTILISATION à l'ouverture du fichier
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("GUIDE D'UTILISATION")
+    
+    With ws
+        .Protect Password:="2005", UserInterfaceOnly:=True
+        .EnableSelection = xlUnlockedCells ' Empêche la sélection des cellules protégées
+    End With
+
+    ' Affiche un message d'information
+    MsgBox "VEUILLEZ LIRE LE GUIDE D'UTILISATION POUR UNE BONNE UTILISATION DU FICHIER.", vbInformation, "INFORMATION IMPORTANTE"
+    On Error Resume Next
+    lastF5Value = ThisWorkbook.Sheets("KPI").Range("F5").Value
+    Call TraduireFormulesEnFrancais
+    Call ActualiserTousLesTCD
+    On Error GoTo 0
+    Call VerrouillerFeuillesSansImpacterMacros
+    Call VerrouillerCellulesAvecFormules
+End Sub
+
+Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
+    On Error GoTo fin
+    Application.EnableEvents = False
+
+    If Sh.Name = "KPI" And Not Intersect(Target, Sh.Range("F5")) Is Nothing Then
+        Call EvaluerDPO
+        lastF5Value = Sh.Range("F5").Value
+    End If
+
+    If Sh.Name = "DONNEES" Then
+        If Not Intersect(Target, Sh.Range("F6")) Is Nothing Then
+            Call EvaluerDPO
+            lastF5Value = ThisWorkbook.Sheets("KPI").Range("F5").Value
+        End If
+        If Not Intersect(Target, Sh.Range("E8")) Is Nothing Then
+            Call EvaluerDIO
+        End If
+        Call MettreAJourSyntheseFournisseurs
+    End If
+
+    If Sh.Name = "KPI" And Not Intersect(Target, Sh.Range("J6")) Is Nothing Then
+        Call EvaluerDIO
+    End If
+
+    Call EvaluerDSO
+
+fin:
+    Application.EnableEvents = True
+End Sub
+
+Private Sub Workbook_SheetCalculate(ByVal Sh As Object)
+    On Error GoTo fin
+    Application.EnableEvents = False
+
+    Dim currentF5Value As Variant
+    currentF5Value = ThisWorkbook.Sheets("KPI").Range("F5").Value
+
+    If currentF5Value <> lastF5Value Then
+        Call EvaluerDPO
+        lastF5Value = currentF5Value
+    End If
+
+    If Sh.Name = "KPI" Or Sh.Name = "DONNEES" Then
+        Call EvaluerDSO
+        Call EvaluerDIO
+    End If
+
+fin:
+    Application.EnableEvents = True
+End Sub
+
+Private Sub Workbook_SheetActivate(ByVal Sh As Object)
+    On Error Resume Next
+    Call ActualiserTousLesTCD
+End Sub
+
+Private Sub ActualiserTousLesTCD()
+    Dim ws As Worksheet, pt As PivotTable
+    On Error Resume Next
+    For Each ws In ThisWorkbook.Worksheets
+        For Each pt In ws.PivotTables
+            pt.RefreshTable
+        Next pt
+    Next ws
+    On Error GoTo 0
+End Sub
+
+' === EVAL DSO resté inchangé ===
+Private Sub EvaluerDSO()
+    Dim dso As Double
+    Dim seuil As Double
+    Dim wsKPI As Worksheet, wsDonnees As Worksheet
+
+    Set wsKPI = ThisWorkbook.Sheets("KPI")
+    Set wsDonnees = ThisWorkbook.Sheets("DONNEES")
+
+    On Error GoTo erreur
+
+    If IsNumeric(wsKPI.Range("B5").Value) And IsNumeric(wsDonnees.Range("F4").Value) Then
+        dso = CDbl(wsKPI.Range("B5").Value)
+        seuil = CDbl(wsDonnees.Range("F4").Value)
+
+        Dim resultat As String
+
+        If dso < seuil - 10 Then
+            resultat = "DSO TRÈS COURT"
+        ElseIf dso >= seuil - 10 And dso < seuil - 3 Then
+            resultat = "DSO COURT"
+        ElseIf dso >= seuil - 3 And dso <= seuil + 3 Then
+            resultat = "DSO NORMAL"
+        ElseIf dso > seuil + 3 And dso <= seuil + 10 Then
+            resultat = "DSO LONG"
+        ElseIf dso > seuil + 10 Then
+            resultat = "DSO TROP LONG"
+        Else
+            resultat = "Indéfini"
+        End If
+
+        wsKPI.Range("C5").Value = resultat
+    Else
+        wsKPI.Range("C5").Value = "Données invalides"
+    End If
+    Exit Sub
+
+erreur:
+    wsKPI.Range("C5").Value = "Erreur"
+End Sub
