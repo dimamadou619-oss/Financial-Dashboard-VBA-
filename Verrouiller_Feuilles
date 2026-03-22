@@ -1,0 +1,26 @@
+Sub VerrouillerFeuillesSansImpacterMacros()
+    Dim mdp As String: mdp = "2005"
+    Dim feuilles As Variant
+    Dim nomFeuille As Variant
+    Dim ws As Worksheet
+
+    feuilles = Array("KPI", "VISUALISATION", "TCD")
+
+    For Each nomFeuille In feuilles
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets(nomFeuille)
+        If Not ws Is Nothing Then
+            ws.Unprotect Password:=mdp ' Déprotection préalable pour éviter conflit
+            ws.Protect Password:=mdp, _
+                UserInterfaceOnly:=True, _
+                AllowFiltering:=True, _
+                AllowSorting:=True, _
+                AllowUsingPivotTables:=True, _
+                AllowFormattingCells:=True
+        End If
+        Set ws = Nothing
+        On Error GoTo 0
+    Next nomFeuille
+
+    MsgBox "Les feuilles ont été verrouillées sans bloquer les macros.", vbInformation
+End Sub
