@@ -1,0 +1,11 @@
+Sub ActiverFiltresGCD()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("VISUALISATION")
+
+    On Error Resume Next
+    ws.Unprotect Password:="2005"
+    On Error GoTo 0
+
+    MsgBox "Filtres activés : la feuille est maintenant déverrouillée.", vbInformation
+End Sub
+
