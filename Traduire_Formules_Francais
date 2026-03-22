@@ -1,0 +1,20 @@
+Public Sub TraduireFormulesEnFrancais()
+    Dim ws As Worksheet
+    Dim cell As Range
+    Dim compteur As Long
+
+    compteur = 0
+    On Error Resume Next
+
+    For Each ws In ThisWorkbook.Worksheets
+        For Each cell In ws.UsedRange.Cells
+            If cell.HasFormula Then
+                cell.FormulaLocal = cell.FormulaLocal
+                compteur = compteur + 1
+            End If
+        Next cell
+    Next ws
+
+    On Error GoTo 0
+    MsgBox compteur & " formule(s) convertie(s) en français.", vbInformation, "Conversion terminée"
+End Sub
