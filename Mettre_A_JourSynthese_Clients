@@ -1,0 +1,63 @@
+Sub MettreAJourSyntheseClients()
+    Dim wsData As Worksheet, wsKPI As Worksheet
+    Dim tbl As ListObject
+    Dim client As String
+    Dim montant As Double
+    Dim dict As Object
+    Dim i As Long, ligneKPI As Long
+    Dim totalEncours As Double
+    Dim nomClient As Variant
+    Dim mdp As String: mdp = "2005"
+
+    Set wsData = ThisWorkbook.Sheets("DONNEES")
+    Set wsKPI = ThisWorkbook.Sheets("KPI")
+    Set tbl = wsData.ListObjects("VENTES_ET_CREANCES_CLIENTS")
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    ' ?? Déverrouiller la feuille KPI temporairement
+    On Error Resume Next
+    wsKPI.Unprotect Password:=mdp
+    On Error GoTo 0
+
+    ' Vider l'affichage précédent
+    wsKPI.Range("A9:C1000").ClearContents
+    totalEncours = 0
+
+    ' Parcours du tableau pour collecter les montants EN COURS
+    For i = 1 To tbl.ListRows.Count
+        If UCase(Trim(tbl.DataBodyRange(i, tbl.ListColumns("STATUT").Index).Value)) = "EN COURS" Then
+            client = Trim(tbl.DataBodyRange(i, tbl.ListColumns("CLIENT").Index).Value)
+            montant = Val(tbl.DataBodyRange(i, tbl.ListColumns("MONTANT").Index).Value)
+            
+            If client <> "" Then
+                If dict.exists(client) Then
+                    dict(client) = dict(client) + montant
+                Else
+                    dict.Add client, montant
+                End If
+                totalEncours = totalEncours + montant
+            End If
+        End If
+    Next i
+
+    ' Écriture dans la feuille KPI
+    ligneKPI = 9
+    For Each nomClient In dict.Keys
+        wsKPI.Cells(ligneKPI, 1).Value = nomClient
+        wsKPI.Cells(ligneKPI, 2).Value = dict(nomClient)
+        If totalEncours > 0 Then
+            wsKPI.Cells(ligneKPI, 3).Value = dict(nomClient) / totalEncours
+            wsKPI.Cells(ligneKPI, 3).NumberFormat = "0.00%"
+        End If
+        ligneKPI = ligneKPI + 1
+    Next nomClient
+
+    ' ?? Reprotéger la feuille KPI
+    wsKPI.Protect Password:=mdp, _
+        UserInterfaceOnly:=True, _
+        AllowFiltering:=True, _
+        AllowSorting:=True, _
+        AllowUsingPivotTables:=True, _
+        AllowFormattingCells:=True
+End Sub
+
