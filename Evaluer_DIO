@@ -1,0 +1,34 @@
+Public Sub EvaluerDIO()
+    Dim dio As Variant
+    Dim seuil As Variant
+    Dim resultat As String
+
+    On Error GoTo fin
+
+    dio = Sheets("KPI").Range("J6").Value
+    seuil = Sheets("DONNEES").Range("E8").Value
+
+    If IsNumeric(dio) And IsNumeric(seuil) Then
+        If dio >= seuil - 3 And dio <= seuil + 3 Then
+            resultat = "DIO NORMAL"
+        ElseIf dio >= seuil + 4 And dio <= seuil + 10 Then
+            resultat = "DIO LONG"
+        ElseIf dio > seuil + 10 Then
+            resultat = "DIO TROP LONG"
+        ElseIf dio <= seuil - 4 And dio >= seuil - 10 Then
+            resultat = "DIO COURT"
+        ElseIf dio < seuil - 10 Then
+            resultat = "DIO TROP COURT"
+        Else
+            resultat = ""
+        End If
+
+        Application.EnableEvents = False
+        Sheets("KPI").Range("K6").Value = resultat
+        Application.EnableEvents = True
+    End If
+
+fin:
+    Application.EnableEvents = True
+End Sub
+
